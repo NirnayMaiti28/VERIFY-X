@@ -1,0 +1,19 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# ML Models / Weights (prevents pushing large binary files)
+models/
+
+# Testing
+.pytest_cache/
+.coverage

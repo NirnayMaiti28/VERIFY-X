@@ -1,0 +1,102 @@
+﻿[
+    {
+        "idx":  1,
+        "claim":  "The Eiffel Tower is located in Paris, France",
+        "status":  200,
+        "time_ms":  2178,
+        "verdict":  "FALSE",
+        "confidence":  0.722,
+        "evidence_count":  3,
+        "detail":  ""
+    },
+    {
+        "idx":  2,
+        "claim":  "Apple Inc. was founded in 1976",
+        "status":  200,
+        "time_ms":  46,
+        "verdict":  "TRUE",
+        "confidence":  0.98,
+        "evidence_count":  1,
+        "detail":  ""
+    },
+    {
+        "idx":  3,
+        "claim":  "The moon is made of cheese",
+        "status":  200,
+        "time_ms":  46,
+        "verdict":  "TRUE",
+        "confidence":  0.98,
+        "evidence_count":  1,
+        "detail":  ""
+    },
+    {
+        "idx":  4,
+        "claim":  "Water boils at 100 degrees Celsius at sea level",
+        "status":  200,
+        "time_ms":  88,
+        "verdict":  "FALSE",
+        "confidence":  0.851,
+        "evidence_count":  3,
+        "detail":  ""
+    },
+    {
+        "idx":  5,
+        "claim":  "The Great Wall of China is visible from space with the naked eye",
+        "status":  200,
+        "time_ms":  39,
+        "verdict":  "FALSE",
+        "confidence":  0.955,
+        "evidence_count":  1,
+        "detail":  ""
+    },
+    {
+        "idx":  6,
+        "claim":  "NASA landed humans on the Moon in 1969",
+        "status":  200,
+        "time_ms":  131,
+        "verdict":  "MOSTLY TRUE",
+        "confidence":  0.672,
+        "evidence_count":  3,
+        "detail":  ""
+    },
+    {
+        "idx":  7,
+        "claim":  "COVID-19 vaccines contain microchips",
+        "status":  200,
+        "time_ms":  47910,
+        "verdict":  "FALSE",
+        "confidence":  0.826,
+        "evidence_count":  3,
+        "detail":  ""
+    },
+    {
+        "idx":  8,
+        "claim":  "Mount Everest is the tallest mountain above sea level",
+        "status":  200,
+        "time_ms":  16721,
+        "verdict":  "TRUE",
+        "confidence":  0.98,
+        "evidence_count":  1,
+        "detail":  ""
+    },
+    {
+        "idx":  9,
+        "claim":  "The Earth is flat",
+        "status":  200,
+        "time_ms":  41756,
+        "verdict":  "MOSTLY FALSE",
+        "confidence":  0.605,
+        "evidence_count":  3,
+        "detail":  ""
+    },
+    {
+        "idx":  10,
+        "claim":  "The capital of Australia is Canberra",
+        "status":  200,
+        "time_ms":  10766,
+        "verdict":  "FALSE",
+        "confidence":  0.93,
+        "evidence_count":  1,
+        "detail":  ""
+    }
+]

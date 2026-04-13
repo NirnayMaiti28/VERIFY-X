@@ -1,0 +1,206 @@
+{
+  "claims": [
+    {
+      "claim": "Water boils at 100 degrees Celsius at sea level",
+      "nhtm_score": 0.0102,
+      "verdict": "FALSE",
+      "sources": [
+        "Wikipedia",
+        "Wikipedia",
+        "Wikipedia"
+      ],
+      "components": {
+        "E_prime": 0.0488,
+        "S": 0.85,
+        "C": 0.6667,
+        "K": -0.15,
+        "U": 0.3561,
+        "X": 0.8587,
+        "P_T_E": 0.01,
+        "beta": 0.8,
+        "gamma": 0.6,
+        "lambda": 1.5
+      },
+      "timestamp": 1775930452.1905248,
+      "feedback": null
+    },
+    {
+      "claim": "NASA landed humans on the Moon in 1969",
+      "nhtm_score": 0.3488,
+      "verdict": "FALSE",
+      "sources": [
+        "Wikipedia",
+        "Wikipedia",
+        "Wikipedia"
+      ],
+      "components": {
+        "E_prime": 1.0,
+        "S": 0.85,
+        "C": 1.0,
+        "K": -0.9,
+        "U": 0.1528,
+        "X": 0.0332,
+        "P_T_E": 0.99,
+        "beta": 0.8,
+        "gamma": 0.6,
+        "lambda": 1.5
+      },
+      "timestamp": 1775930514.5801163,
+      "feedback": null
+    },
+    {
+      "claim": "COVID-19 vaccines contain microchips",
+      "nhtm_score": 0.0389,
+      "verdict": "FALSE",
+      "sources": [
+        "Wikipedia",
+        "Wikipedia",
+        "Wikipedia"
+      ],
+      "components": {
+        "E_prime": 0.0242,
+        "S": 0.85,
+        "C": 1.0,
+        "K": -0.6754,
+        "U": 0.3598,
+        "X": 0.3093,
+        "P_T_E": 0.1208,
+        "beta": 0.8,
+        "gamma": 0.6,
+        "lambda": 1.5
+      },
+      "timestamp": 1775930613.4900467,
+      "feedback": null
+    },
+    {
+      "claim": "The Earth is flat",
+      "nhtm_score": 0.2957,
+      "verdict": "MOSTLY FALSE",
+      "sources": [
+        "Wikipedia",
+        "Wikipedia",
+        "Wikipedia"
+      ],
+      "components": {
+        "E_prime": 0.765,
+        "S": 0.85,
+        "C": 0.3333,
+        "K": 1.0,
+        "U": 0.3995,
+        "X": 0.8412,
+        "P_T_E": 0.436,
+        "beta": 0.8,
+        "gamma": 0.6,
+        "lambda": 1.5
+      },
+      "timestamp": 1775930707.1894045,
+      "feedback": null
+    },
+    {
+      "claim": "Water boils at 100 degrees Celsius at sea level",
+      "nhtm_score": 0.0102,
+      "verdict": "FALSE",
+      "sources": [
+        "Wikipedia",
+        "Wikipedia",
+        "Wikipedia"
+      ],
+      "components": {
+        "E_prime": 0.0488,
+        "S": 0.85,
+        "C": 0.6667,
+        "K": -0.15,
+        "U": 0.3561,
+        "X": 0.8587,
+        "P_T_E": 0.01,
+        "beta": 0.8,
+        "gamma": 0.6,
+        "lambda": 1.5
+      },
+      "timestamp": 1775931354.8151305,
+      "feedback": null
+    },
+    {
+      "claim": "NASA landed humans on the Moon in 1969",
+      "nhtm_score": 0.3488,
+      "verdict": "FALSE",
+      "sources": [
+        "Wikipedia",
+        "Wikipedia",
+        "Wikipedia"
+      ],
+      "components": {
+        "E_prime": 1.0,
+        "S": 0.85,
+        "C": 1.0,
+        "K": -0.9,
+        "U": 0.1528,
+        "X": 0.0332,
+        "P_T_E": 0.99,
+        "beta": 0.8,
+        "gamma": 0.6,
+        "lambda": 1.5
+      },
+      "timestamp": 1775931569.6219776,
+      "feedback": null
+    },
+    {
+      "claim": "COVID-19 vaccines contain microchips",
+      "nhtm_score": 0.0389,
+      "verdict": "FALSE",
+      "sources": [
+        "Wikipedia",
+        "Wikipedia",
+        "Wikipedia"
+      ],
+      "components": {
+        "E_prime": 0.0242,
+        "S": 0.85,
+        "C": 1.0,
+        "K": -0.6754,
+        "U": 0.3598,
+        "X": 0.3093,
+        "P_T_E": 0.1208,
+        "beta": 0.8,
+        "gamma": 0.6,
+        "lambda": 1.5
+      },
+      "timestamp": 1775931763.4844968,
+      "feedback": null
+    },
+    {
+      "claim": "Sample claim",
+      "nhtm_score": 0.3899,
+      "verdict": "MOSTLY FALSE",
+      "sources": [
+        "Test"
+      ],
+      "components": {
+        "E_prime": 0.6886,
+        "S": 0.5,
+        "C": 0.5,
+        "K": 0.0,
+        "U": 0.3175,
+        "X": 0.05,
+        "P_T_E": 0.8889,
+        "beta": 0.8,
+        "gamma": 0.6,
+        "lambda": 1.5
+      },
+      "timestamp": 1775933441.9556491,
+      "feedback": null
+    }
+  ],
+  "source_stats": {
+    "wikipedia": {
+      "total": 21,
+      "correct": 0,
+      "incorrect": 0
+    },
+    "test": {
+      "total": 1,
+      "correct": 0,
+      "incorrect": 0
+    }
+  }
+}
