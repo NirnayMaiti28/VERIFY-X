@@ -339,9 +339,6 @@ def main():
     lora_kwargs = build_kwargs_from_signature(LoraConfig.__init__, lora_kwargs)
     peft_config = LoraConfig(**lora_kwargs)
     
-    model = get_peft_model(model, peft_config)
-    model.print_trainable_parameters()
-    
     # 6. Training Arguments (SFTConfig)
     train_cfg = config["training"]
     out_dir = config["output"]["dir"]
@@ -468,11 +465,13 @@ def main():
     if dropped_trainer:
         print(f"    [Warning] Dropping unsupported SFTTrainer arguments: {dropped_trainer}")
         
+    assert not isinstance(model, peft.PeftModel), "Model should not be a PeftModel before SFTTrainer"
+        
     trainer = SFTTrainer(**final_trainer_kwargs)
     
     # 8. Dry-run validation success
     print("\n" + "="*50)
-    print("VERIFY-X training pipeline initialization successful.")
+    print("VERIFY-X QLoRA trainer initialized successfully.")
     print("="*50 + "\n")
     
     # 9. Training
