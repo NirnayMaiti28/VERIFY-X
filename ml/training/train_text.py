@@ -3,6 +3,7 @@ import json
 import yaml
 import argparse
 import torch
+import sys
 from datasets import load_dataset, DatasetDict
 from transformers import (
     AutoModelForCausalLM,
@@ -28,6 +29,11 @@ def parse_args():
         default="../configs/text_qlora.yaml",
         help="Path to the training configuration YAML file"
     )
+    parser.add_argument(
+        "--test-only", 
+        action="store_true",
+        help="Run only the dataset loading and formatting stage to verify data, then exit."
+    )
     return parser.parse_args()
 
 def load_config(config_path):
@@ -43,7 +49,7 @@ def format_instruction(example):
     claim = example.get("claim", "")
     
     evidence_text = ""
-    evidence_list = example.get("evidence", [])
+    evidence_list = example.get("evidence") or []
     
     if isinstance(evidence_list, list):
         for i, ev in enumerate(evidence_list):
@@ -96,6 +102,16 @@ def prepare_dataset(config):
     print("[*] Loading datasets...")
     datasets_to_merge = []
     
+    summary = {
+        "FEVER": 0,
+        "LIAR": 0,
+        "total": 0,
+        "skipped": 0,
+        "label_distribution": {}
+    }
+    
+    label_map = config["dataset"].get("label_map", {})
+    
     for source in config["dataset"]["sources"]:
         name = source["name"]
         path = source["path"]
@@ -103,41 +119,100 @@ def prepare_dataset(config):
         
         print(f"    - Loading {name} from {path} ({split})")
         
+        load_kwargs = {}
+        # Avoid the "Dataset scripts are no longer supported" error
+        if path == "fever/fever":
+            load_kwargs["revision"] = "refs/convert/parquet"
+        elif path == "liar":
+            path = "rickpereira/liar"
+            
         try:
-            raw_ds = load_dataset(path, split=split, trust_remote_code=True)
+            # We enforce trust_remote_code=False for security and stability
+            raw_ds = load_dataset(path, split=split, trust_remote_code=False, **load_kwargs)
         except Exception as e:
             print(f"    ! Failed to load {name}: {e}. Skipping.")
             continue
+            
+        # Convert ClassLabel to string to match YAML mappings if needed
+        if "label" in raw_ds.features and hasattr(raw_ds.features["label"], "int2str"):
+            def int_to_str(ex):
+                if ex["label"] != -1 and ex["label"] is not None:
+                    ex["label_str"] = raw_ds.features["label"].int2str(ex["label"])
+                else:
+                    ex["label_str"] = "UNKNOWN"
+                return ex
+            raw_ds = raw_ds.map(int_to_str, desc=f"Converting labels for {name}")
+            label_col = "label_str"
+        else:
+            label_col = "label"
+            
+        def normalize_example(example):
+            claim = example.get("claim") or example.get("statement") or example.get("text")
+            label_val = example.get(label_col)
+            
+            # apply yaml label map
+            str_label = str(label_val)
+            mapped_label = label_map.get(str_label, str_label)
+            
+            evidence = example.get("evidence") or []
+            return {"claim": claim, "label": mapped_label, "evidence": evidence}
+
+        norm_ds = raw_ds.map(normalize_example, desc=f"Normalizing schema for {name}")
         
-        raw_ds = raw_ds.shuffle(seed=config["dataset"]["seed"]).select(range(min(1000, len(raw_ds))))
-        datasets_to_merge.append(raw_ds)
+        # Filter malformed examples
+        def is_valid(example):
+            return bool(example.get("claim") and example.get("label") and example.get("label") != "UNKNOWN")
+
+        initial_len = len(norm_ds)
+        valid_ds = norm_ds.filter(is_valid, desc=f"Filtering {name}")
+        skipped = initial_len - len(valid_ds)
+        summary["skipped"] += skipped
+        
+        # Select only required columns to avoid conflicts on concatenate
+        valid_ds = valid_ds.select_columns(["claim", "label", "evidence"])
+        
+        count = len(valid_ds)
+        if name.lower() == "fever":
+            summary["FEVER"] += count
+        elif name.lower() == "liar":
+            summary["LIAR"] += count
+        summary["total"] += count
+        
+        datasets_to_merge.append(valid_ds)
     
     if not datasets_to_merge:
         raise ValueError("No datasets could be loaded.")
+        
+    from datasets import concatenate_datasets
+    merged_ds = concatenate_datasets(datasets_to_merge)
+    merged_ds = merged_ds.shuffle(seed=config["dataset"]["seed"])
     
-    merged_ds = datasets_to_merge[0]
+    # Calculate label distribution on the merged dataset
+    for ex in merged_ds:
+        lbl = ex["label"]
+        summary["label_distribution"][lbl] = summary["label_distribution"].get(lbl, 0) + 1
+        
+    print("\n" + "="*40)
+    print("VERIFY-X DATASET SUMMARY")
+    print("="*40)
+    print(f"FEVER examples loaded: {summary['FEVER']}")
+    print(f"LIAR examples loaded:  {summary['LIAR']}")
+    print(f"Total valid examples:  {summary['total']}")
+    print(f"Malformed skipped:     {summary['skipped']}")
+    print("Label Distribution:")
+    for lbl, count in summary["label_distribution"].items():
+        print(f"  - {lbl}: {count}")
+    print("="*40 + "\n")
     
     print("[*] Formatting dataset into instructions...")
-    def ensure_columns(example):
-        if "claim" not in example:
-            example["claim"] = example.get("statement", example.get("text", "Unknown claim"))
-        if "label" not in example:
-            example["label"] = "NOT_ENOUGH_INFORMATION"
-        
-        label_map = config["dataset"].get("label_map", {})
-        str_label = str(example["label"])
-        example["label"] = label_map.get(str_label, str_label)
-        
-        if "evidence" not in example:
-            example["evidence"] = []
-        return example
-        
-    merged_ds = merged_ds.map(ensure_columns)
-    formatted_ds = merged_ds.map(format_instruction, remove_columns=merged_ds.column_names)
+    formatted_ds = merged_ds.map(format_instruction, remove_columns=merged_ds.column_names, desc="Formatting prompts")
     
     print("[*] Splitting dataset...")
     val_split = config["dataset"].get("validation_split", 0.1)
     split_ds = formatted_ds.train_test_split(test_size=val_split, seed=config["dataset"]["seed"])
+    
+    print(f"Final Train Size: {len(split_ds['train'])}")
+    print(f"Final Val Size:   {len(split_ds['test'])}")
     
     return split_ds
 
@@ -148,7 +223,12 @@ def main():
     
     # 1. Dataset
     dataset = prepare_dataset(config)
-    print(f"Train size: {len(dataset['train'])}, Val size: {len(dataset['test'])}")
+    
+    if args.test_only:
+        print("\n[*] Dataset loading test complete. Exiting due to --test-only flag.")
+        print("[*] Sample Train Example:")
+        print(dataset["train"][0])
+        sys.exit(0)
     
     # 2. Tokenizer
     model_name = config["model"]["name"]
