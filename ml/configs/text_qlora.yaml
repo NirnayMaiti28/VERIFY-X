@@ -1,0 +1,79 @@
+# VERIFY-X 2.0 — Text Model QLoRA Training Configuration
+# ─────────────────────────────────────────────────────────
+# These are starting values. Experiment with hyperparameters.
+
+model:
+  name: "Qwen/Qwen3-8B"
+  revision: "main"
+  trust_remote_code: true
+
+training:
+  method: "qlora"
+  epochs: 3
+  learning_rate: 0.0002
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.05
+  batch_size: 2
+  gradient_accumulation_steps: 8
+  max_seq_length: 2048
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  fp16: false
+  bf16: true
+  gradient_checkpointing: true
+  optim: "paged_adamw_8bit"
+  logging_steps: 10
+  save_steps: 200
+  eval_steps: 200
+  save_total_limit: 3
+
+lora:
+  rank: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: "all-linear"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+quantization:
+  bits: 4
+  quant_type: "nf4"
+  double_quant: true
+  compute_dtype: "bfloat16"
+
+dataset:
+  # Primary datasets
+  sources:
+    - name: "fever"
+      path: "fever/fever"
+      split: "train"
+    - name: "liar"
+      path: "liar"
+      split: "train"
+  
+  # Label mapping: normalize dataset labels to VERIFY-X labels
+  label_map:
+    # FEVER labels
+    "SUPPORTS": "TRUE"
+    "REFUTES": "FALSE"
+    "NOT ENOUGH INFO": "NOT_ENOUGH_INFORMATION"
+    # LIAR labels
+    "true": "TRUE"
+    "mostly-true": "TRUE"
+    "half-true": "PARTIALLY_TRUE"
+    "barely-true": "MISLEADING"
+    "false": "FALSE"
+    "pants-fire": "FALSE"
+  
+  validation_split: 0.1
+  test_split: 0.1
+  seed: 42
+
+output:
+  dir: "./outputs/verifyx-text-v1"
+  hub_model_id: ""  # Set to push to HF Hub
+  push_to_hub: false
+
+mlflow:
+  experiment_name: "verifyx-text-training"
+  tracking_uri: "sqlite:///mlflow.db"

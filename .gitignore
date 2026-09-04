@@ -1,0 +1,79 @@
+# ─── Python ───
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.whl
+
+# ─── Virtual Environments ───
+venv/
+.venv/
+env/
+
+# ─── Environment Variables ───
+.env
+.env.local
+.env.production
+
+# ─── IDE ───
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Node ───
+node_modules/
+frontend/dist/
+frontend/build/
+
+# ─── ML Models (NEVER commit model weights) ───
+models/
+*.safetensors
+*.bin
+*.gguf
+*.pt
+*.pth
+*.ckpt
+*.h5
+
+# ─── ML Data ───
+ml/data/raw/
+ml/data/interim/
+ml/data/processed/
+ml/data/splits/
+ml/checkpoints/
+
+# ─── MLflow ───
+mlruns/
+mlflow.db
+
+# ─── Docker ───
+*.log
+
+# ─── Jupyter ───
+.ipynb_checkpoints/
+
+# ─── Testing ───
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# ─── Database ───
+*.db
+*.sqlite3
+
+# ─── Misc ───
+*.bak
+*.tmp

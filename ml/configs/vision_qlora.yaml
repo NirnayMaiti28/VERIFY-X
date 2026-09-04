@@ -1,0 +1,60 @@
+# VERIFY-X 2.0 — Vision Model QLoRA Training Configuration
+# ────────────────────────────────────────────────────────────
+# OPTIONAL: Only train if pretrained VLM baseline is insufficient.
+
+model:
+  name: "Qwen/Qwen2.5-VL-7B-Instruct"
+  revision: "main"
+  trust_remote_code: true
+
+training:
+  method: "qlora"
+  epochs: 3
+  learning_rate: 0.0001
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.05
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  max_seq_length: 2048
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  fp16: false
+  bf16: true
+  gradient_checkpointing: true
+  optim: "paged_adamw_8bit"
+  logging_steps: 10
+  save_steps: 100
+  eval_steps: 100
+  save_total_limit: 2
+
+lora:
+  rank: 8
+  alpha: 16
+  dropout: 0.05
+  target_modules: "all-linear"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+quantization:
+  bits: 4
+  quant_type: "nf4"
+  double_quant: true
+  compute_dtype: "bfloat16"
+
+dataset:
+  # Multimodal datasets — populate when available
+  sources: []
+  
+  label_map:
+    "SUPPORTS": "TRUE"
+    "REFUTES": "FALSE"
+    "NOT ENOUGH INFO": "NOT_ENOUGH_INFORMATION"
+  
+  validation_split: 0.15
+  test_split: 0.15
+  seed: 42
+
+output:
+  dir: "./outputs/verifyx-vision-v1"
+  hub_model_id: ""
+  push_to_hub: false
