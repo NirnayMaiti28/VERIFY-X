@@ -15,8 +15,13 @@ from peft import (
     LoraConfig,
     get_peft_model,
     prepare_model_for_kbit_training,
+    __version__ as peft_version
 )
 from trl import SFTTrainer, SFTConfig
+import trl
+import transformers
+import datasets
+import peft
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -221,6 +226,15 @@ def main():
     config = load_config(args.config)
     set_seed(config["dataset"].get("seed", 42))
     
+    print("="*40)
+    print("ENVIRONMENT VERSIONS")
+    print("="*40)
+    print(f"trl:          {trl.__version__}")
+    print(f"transformers: {transformers.__version__}")
+    print(f"peft:         {peft.__version__}")
+    print(f"datasets:     {datasets.__version__}")
+    print("="*40 + "\n")
+    
     # 1. Dataset
     dataset = prepare_dataset(config)
     
@@ -285,22 +299,24 @@ def main():
     out_dir = config["output"]["dir"]
     os.makedirs(out_dir, exist_ok=True)
     
-    sft_config = SFTConfig(
+    # Calculate warmup_steps instead of warmup_ratio to avoid SFTConfig signature errors in older versions
+    total_steps = int((len(dataset["train"]) / (train_cfg["batch_size"] * train_cfg["gradient_accumulation_steps"])) * train_cfg["epochs"])
+    warmup_steps = int(total_steps * train_cfg.get("warmup_ratio", 0.05))
+    
+    sft_kwargs = dict(
         output_dir=out_dir,
         per_device_train_batch_size=train_cfg["batch_size"],
         per_device_eval_batch_size=train_cfg["batch_size"],
         gradient_accumulation_steps=train_cfg["gradient_accumulation_steps"],
         learning_rate=train_cfg["learning_rate"],
         lr_scheduler_type=train_cfg["lr_scheduler_type"],
-        warmup_ratio=train_cfg["warmup_ratio"],
+        warmup_steps=warmup_steps,
         weight_decay=train_cfg["weight_decay"],
         max_grad_norm=train_cfg["max_grad_norm"],
         num_train_epochs=train_cfg["epochs"],
         fp16=train_cfg["fp16"],
         bf16=train_cfg["bf16"],
         logging_steps=train_cfg["logging_steps"],
-        eval_strategy="steps" if train_cfg.get("eval_steps") else "no",
-        eval_steps=train_cfg.get("eval_steps"),
         save_strategy="steps",
         save_steps=train_cfg["save_steps"],
         save_total_limit=train_cfg["save_total_limit"],
@@ -310,6 +326,27 @@ def main():
         max_seq_length=train_cfg["max_seq_length"],
         dataset_text_field=None,
     )
+    
+    # Handle eval_strategy vs evaluation_strategy based on transformers version
+    if train_cfg.get("eval_steps"):
+        try:
+            # Check if eval_strategy is supported
+            _ = SFTConfig(**sft_kwargs, eval_strategy="steps", eval_steps=train_cfg["eval_steps"])
+            sft_kwargs["eval_strategy"] = "steps"
+            sft_kwargs["eval_steps"] = train_cfg["eval_steps"]
+        except TypeError:
+            # Fallback to evaluation_strategy
+            sft_kwargs["evaluation_strategy"] = "steps"
+            sft_kwargs["eval_steps"] = train_cfg["eval_steps"]
+    
+    print("\n" + "="*40)
+    print("FINAL TRAINING CONFIGURATION (SFTConfig)")
+    print("="*40)
+    for k, v in sft_kwargs.items():
+        print(f"  {k}: {v}")
+    print("="*40 + "\n")
+    
+    sft_config = SFTConfig(**sft_kwargs)
     
     # 7. Trainer Setup
     print("[*] Initializing SFTTrainer...")
