@@ -86,9 +86,9 @@ class SourceCredibilityService:
                 return SourceTier.TIER_B, 0.7
 
         # Check domain-level heuristics
-        if domain_lower.endswith(".gov") or domain_lower.endswith(".gov.in"):
+        if domain_lower.endswith((".gov", ".gov.in")):
             return SourceTier.TIER_A, 0.85
-        if domain_lower.endswith(".edu") or domain_lower.endswith(".ac.in"):
+        if domain_lower.endswith((".edu", ".ac.in")):
             return SourceTier.TIER_A, 0.8
         if domain_lower.endswith(".org"):
             return SourceTier.TIER_B, 0.6
@@ -99,7 +99,7 @@ class SourceCredibilityService:
     def assess_evidence(self, evidence: list[EvidenceItem]) -> list[EvidenceItem]:
         """Assess credibility for all evidence items and update their source_tier."""
         for item in evidence:
-            tier, trust = self.assess_source(item.url)
+            tier, _trust = self.assess_source(item.url)
             item.source_tier = tier
         return evidence
 

@@ -6,7 +6,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -29,13 +28,13 @@ class EvidenceItem(BaseModel):
     source: str
     title: str
     url: str
-    published_at: Optional[datetime] = None
+    published_at: datetime | None = None
     passage: str
     relevance_score: float = Field(ge=0, le=1)
     stance: EvidenceStance = EvidenceStance.NEUTRAL
     source_tier: SourceTier = SourceTier.TIER_C
     language: str = "en"
-    retriever: Optional[str] = None
+    retriever: str | None = None
 
 
 class RetrievedDocument(BaseModel):
@@ -45,7 +44,7 @@ class RetrievedDocument(BaseModel):
     url: str
     content: str
     source: str
-    published_at: Optional[datetime] = None
+    published_at: datetime | None = None
     language: str = "en"
     retriever: str = ""
     metadata: dict = Field(default_factory=dict)

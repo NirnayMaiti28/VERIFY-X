@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 import httpx
 
@@ -25,7 +24,7 @@ NEWSAPI_BASE = "https://newsapi.org/v2/everything"
 class NewsAPIRetriever(RetrieverInterface):
     """Retrieves documents from NewsAPI.org."""
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: str | None = None):
         self._api_key = api_key
 
     @property
@@ -78,7 +77,7 @@ class NewsAPIRetriever(RetrieverInterface):
                 if pub_str:
                     try:
                         published_at = datetime.fromisoformat(pub_str.replace("Z", "+00:00"))
-                    except Exception:
+                    except Exception:  # noqa: BLE001, S110
                         pass
 
                 content = article.get("content", "") or article.get("description", "") or ""
@@ -105,6 +104,6 @@ class NewsAPIRetriever(RetrieverInterface):
         except httpx.HTTPError as e:
             logger.error("newsapi_http_error", query=query, error=str(e))
             return []
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error("newsapi_error", query=query, error=str(e))
             return []

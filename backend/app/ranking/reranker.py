@@ -7,8 +7,6 @@ to select the strongest evidence.
 
 from __future__ import annotations
 
-from typing import Optional
-
 from app.schemas.evidence import RetrievedDocument
 from app.utils.logging import get_logger
 
@@ -85,6 +83,6 @@ class CrossEncoderReranker:
 
             return selected
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error("reranking_error", error=str(e))
             return [(doc, 0.5) for doc in documents[:top_k]]

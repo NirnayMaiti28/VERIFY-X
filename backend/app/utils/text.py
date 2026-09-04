@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from typing import Optional
 
 
 def clean_text(text: str) -> str:
@@ -86,15 +85,14 @@ def is_bengali_script(text: str) -> bool:
     return bool(re.search(r"[\u0980-\u09FF]", text))
 
 
-def extract_domain(url: str) -> Optional[str]:
+def extract_domain(url: str) -> str | None:
     """Extract domain from a URL."""
     try:
         from urllib.parse import urlparse
         parsed = urlparse(url)
         domain = parsed.netloc or parsed.path.split("/")[0]
         # Remove www prefix
-        if domain.startswith("www."):
-            domain = domain[4:]
+        domain = domain.removeprefix("www.")
         return domain
-    except Exception:
+    except Exception:  # noqa: BLE001
         return None

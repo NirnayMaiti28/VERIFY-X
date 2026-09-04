@@ -85,7 +85,7 @@ class LanguageService:
                     return Language.BENGALI
                 elif detected in ('en', 'en-US', 'en-GB'):
                     return Language.ENGLISH
-            except Exception:
+            except Exception:  # noqa: BLE001, S110
                 pass
             # Default Latin script to English
             return Language.ENGLISH

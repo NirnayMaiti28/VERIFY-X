@@ -4,7 +4,7 @@ VERIFY-X 2.0 — Async SQLAlchemy database session management.
 
 from __future__ import annotations
 
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 

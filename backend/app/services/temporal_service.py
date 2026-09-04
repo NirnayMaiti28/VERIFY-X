@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import Optional
 
 from app.schemas.evidence import EvidenceItem
 from app.schemas.verification import TimelineEvent
@@ -26,7 +25,7 @@ class TemporalService:
         claim: str,
         claim_dates: list[str],
         evidence: list[EvidenceItem],
-        current_date: Optional[datetime] = None,
+        current_date: datetime | None = None,
     ) -> dict:
         """Perform temporal analysis.
         
@@ -40,7 +39,7 @@ class TemporalService:
             dict with temporal_consistency score, timeline, and notes
         """
         if current_date is None:
-            current_date = datetime.utcnow()
+            current_date = datetime.utcnow()  # noqa: DTZ003
 
         # Extract years from claim dates
         claim_years = []
@@ -86,7 +85,7 @@ class TemporalService:
         # Check if claim references very old dates but evidence is recent
         if claim_years and evidence_dates:
             max_claim_year = max(claim_years)
-            min_evidence_date = min(evidence_dates) if evidence_dates else current_date
+            min(evidence_dates) if evidence_dates else current_date
 
             # If claim is about distant past but evidence is recent, might be historical
             if max_claim_year < current_year - 5:

@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional
 from urllib.parse import quote_plus
 
 import feedparser
@@ -68,8 +67,8 @@ class GoogleNewsRetriever(RetrieverInterface):
                 published_at = None
                 if hasattr(entry, 'published_parsed') and entry.published_parsed:
                     try:
-                        published_at = datetime(*entry.published_parsed[:6])
-                    except Exception:
+                        published_at = datetime(*entry.published_parsed[:6])  # noqa: DTZ001
+                    except Exception:  # noqa: BLE001, S110
                         pass
 
                 # Extract source from title (Google News format: "Title - Source")
@@ -112,6 +111,6 @@ class GoogleNewsRetriever(RetrieverInterface):
         except httpx.HTTPError as e:
             logger.error("google_news_http_error", query=query, error=str(e))
             return []
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error("google_news_error", query=query, error=str(e))
             return []

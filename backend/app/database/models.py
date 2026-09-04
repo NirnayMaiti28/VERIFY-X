@@ -11,7 +11,6 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum,
     Float,
     ForeignKey,
     Integer,
@@ -24,7 +23,6 @@ from sqlalchemy.orm import DeclarativeBase, relationship
 
 class Base(DeclarativeBase):
     """Base class for all ORM models."""
-    pass
 
 
 class VerificationRequestModel(Base):

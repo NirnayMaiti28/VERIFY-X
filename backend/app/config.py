@@ -8,9 +8,8 @@ from __future__ import annotations
 
 from enum import Enum
 from functools import lru_cache
-from typing import Optional
 
-from pydantic import Field, field_validator
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -39,16 +38,16 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
 
     # ── API Keys ──
-    news_api_key: Optional[str] = None
-    hf_token: Optional[str] = None
+    news_api_key: str | None = None
+    hf_token: str | None = None
 
     # ── Text Model ──
     text_base_model: str = "Qwen/Qwen3-8B"
-    text_adapter: Optional[str] = None
+    text_adapter: str | None = None
 
     # ── Vision Model ──
     vision_base_model: str = "Qwen/Qwen2.5-VL-7B-Instruct"
-    vision_adapter: Optional[str] = None
+    vision_adapter: str | None = None
 
     # ── Model Mode ──
     model_mode: ModelMode = ModelMode.LOCAL
@@ -93,7 +92,7 @@ class Settings(BaseSettings):
     }
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     """Cached settings instance."""
     return Settings()

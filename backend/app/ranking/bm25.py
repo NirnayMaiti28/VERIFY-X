@@ -7,7 +7,6 @@ Lexical retrieval using BM25 over document chunks.
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 from rank_bm25 import BM25Okapi
 

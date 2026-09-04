@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import re
 from ipaddress import ip_address
-from typing import Optional
 from urllib.parse import urlparse
 
 # Allowed image MIME types for upload
@@ -35,7 +34,7 @@ PRIVATE_IP_RANGES = [
 ]
 
 
-def validate_file_type(content_type: Optional[str], filename: Optional[str] = None) -> bool:
+def validate_file_type(content_type: str | None, filename: str | None = None) -> bool:
     """Validate that an uploaded file is an allowed image type."""
     if content_type and content_type.lower() in ALLOWED_IMAGE_TYPES:
         return True
@@ -86,7 +85,7 @@ def is_safe_url(url: str) -> bool:
                     return False
 
         return True
-    except Exception:
+    except Exception:  # noqa: BLE001
         return False
 
 

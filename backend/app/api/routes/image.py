@@ -7,9 +7,16 @@ Endpoints for multimodal verification (image + optional context).
 from __future__ import annotations
 
 import time
-from typing import Annotated, Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db
@@ -19,12 +26,11 @@ from app.schemas.verification import (
     Language,
     ProcessingMetrics,
     VerificationResponse,
-    VerdictEnum,
 )
 from app.services.claim_service import ClaimService
 from app.services.query_service import QueryService
-from app.services.retrieval_service import RetrievalService
 from app.services.ranking_service import RankingService
+from app.services.retrieval_service import RetrievalService
 from app.services.verdict_service import VerdictService
 from app.utils.logging import get_logger, request_id_var
 
@@ -43,10 +49,10 @@ vision_interface = VisionModelInterface()
 @router.post("", response_model=VerificationResponse)
 async def verify_image(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
-    context: Optional[str] = Form(None),
-    language: Optional[Language] = Form(None),
-    db: AsyncSession = Depends(get_db),
+    file: UploadFile = File(...),  # noqa: B008
+    context: str | None = Form(None),
+    language: Language | None = Form(None),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> VerificationResponse:
     """Verify an image claim using the multimodal pipeline."""
     request_id = request_id_var.get()

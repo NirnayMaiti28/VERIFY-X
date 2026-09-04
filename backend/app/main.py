@@ -6,8 +6,9 @@ Multimodal AI Fact Verification & Evidence Intelligence Platform
 
 from __future__ import annotations
 
+import uuid
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,8 +17,6 @@ from fastapi.responses import JSONResponse
 from app.config import get_settings
 from app.database.session import close_db, init_db
 from app.utils.logging import get_logger, request_id_var, setup_logging
-
-import uuid
 
 settings = get_settings()
 logger = get_logger("main")
@@ -34,7 +33,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     try:
         await init_db()
         logger.info("database_initialized")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.warning("database_init_skipped", error=str(e))
 
     yield
@@ -88,12 +87,12 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 # ── Register Routers ──
-from app.api.routes.health import router as health_router
-from app.api.routes.verify import router as verify_router
-from app.api.routes.image import router as image_router
 from app.api.routes.evidence import router as evidence_router
-from app.api.routes.history import router as history_router
 from app.api.routes.feedback import router as feedback_router
+from app.api.routes.health import router as health_router
+from app.api.routes.history import router as history_router
+from app.api.routes.image import router as image_router
+from app.api.routes.verify import router as verify_router
 
 API_PREFIX = "/api/v1"
 

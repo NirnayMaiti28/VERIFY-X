@@ -7,8 +7,6 @@ This is the central orchestration point for the verification pipeline.
 
 from __future__ import annotations
 
-from typing import Optional
-
 from app.schemas.evidence import EvidenceItem, EvidenceStance
 from app.schemas.verification import (
     SourceAgreement,
@@ -55,7 +53,7 @@ class VerdictService:
         claim: str,
         claim_dates: list[str],
         evidence: list[EvidenceItem],
-        model_prediction: Optional[dict] = None,
+        model_prediction: dict | None = None,
     ) -> dict:
         """Generate a complete verdict with all signals.
         
@@ -213,10 +211,10 @@ class VerdictService:
         self,
         evidence: list[EvidenceItem],
         agreement: SourceAgreement,
-        model_verdict: Optional[str],
+        model_verdict: str | None,
         model_confidence: float,
         temporal_consistency: float,
-        numerical_consistency: Optional[float],
+        numerical_consistency: float | None,
     ) -> tuple[VerdictEnum, float, str]:
         """Determine the final verdict based on all signals.
         
@@ -295,15 +293,15 @@ class VerdictService:
         total = agreement.support_count + agreement.refute_count + agreement.neutral_count
 
         if verdict == VerdictEnum.TRUE:
-            parts.append(f"The claim is supported by the available evidence.")
+            parts.append("The claim is supported by the available evidence.")
         elif verdict == VerdictEnum.FALSE:
-            parts.append(f"The claim is contradicted by the available evidence.")
+            parts.append("The claim is contradicted by the available evidence.")
         elif verdict == VerdictEnum.MISLEADING:
-            parts.append(f"The claim is misleading based on the available evidence.")
+            parts.append("The claim is misleading based on the available evidence.")
         elif verdict == VerdictEnum.PARTIALLY_TRUE:
-            parts.append(f"The claim is partially supported by the evidence.")
+            parts.append("The claim is partially supported by the evidence.")
         else:
-            parts.append(f"There is not enough evidence to verify this claim.")
+            parts.append("There is not enough evidence to verify this claim.")
 
         if total > 0:
             parts.append(f"Based on {total} evidence source(s): {agreement.support_count} support, {agreement.refute_count} refute, {agreement.neutral_count} neutral.")

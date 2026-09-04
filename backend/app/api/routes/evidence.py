@@ -18,7 +18,7 @@ router = APIRouter(prefix="/evidence", tags=["evidence"])
 @router.get("/{request_id}", response_model=EvidenceResponse)
 async def get_evidence(
     request_id: str,
-    repo: VerificationRepository = Depends(get_repository),
+    repo: VerificationRepository = Depends(get_repository),  # noqa: B008
 ) -> EvidenceResponse:
     """Get detailed evidence for a verification request."""
     try:

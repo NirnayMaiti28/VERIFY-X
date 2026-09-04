@@ -8,7 +8,6 @@ Never exposes raw LLM probability as final confidence.
 from __future__ import annotations
 
 import math
-from typing import Optional
 
 import numpy as np
 
@@ -39,7 +38,7 @@ class ConfidenceService:
         source_credibility: float = 0.0,
         agreement_score: float = 0.0,
         temporal_consistency: float = 1.0,
-        numerical_consistency: Optional[float] = None,
+        numerical_consistency: float | None = None,
         evidence_count: int = 0,
     ) -> float:
         """Calibrate confidence using temperature scaling + evidence signals.

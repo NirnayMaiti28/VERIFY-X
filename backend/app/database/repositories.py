@@ -6,9 +6,8 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
-from sqlalchemy import select, desc
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -49,7 +48,7 @@ class VerificationRepository:
 
     async def get_verification_request(
         self, request_id: uuid.UUID
-    ) -> Optional[VerificationRequestModel]:
+    ) -> VerificationRequestModel | None:
         result = await self.db.execute(
             select(VerificationRequestModel)
             .options(
@@ -128,7 +127,7 @@ class VerificationRepository:
         await self.db.flush()
         return claim
 
-    async def find_claim_by_hash(self, claim_hash: str) -> Optional[ClaimModel]:
+    async def find_claim_by_hash(self, claim_hash: str) -> ClaimModel | None:
         result = await self.db.execute(
             select(ClaimModel).where(ClaimModel.claim_hash == claim_hash)
         )

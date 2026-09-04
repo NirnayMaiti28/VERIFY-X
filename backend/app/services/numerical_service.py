@@ -8,7 +8,6 @@ using arithmetic rather than LLM guessing.
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 from app.utils.logging import get_logger
 
@@ -127,7 +126,7 @@ class NumericalService:
 
         return numbers
 
-    def _compare_numbers(self, claim_num: dict, evidence_num: dict) -> Optional[dict]:
+    def _compare_numbers(self, claim_num: dict, evidence_num: dict) -> dict | None:
         """Compare a claim number with an evidence number.
         
         Returns comparison result if the numbers are of compatible types.

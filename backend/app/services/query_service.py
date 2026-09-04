@@ -8,7 +8,6 @@ for multi-source retrieval.
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 from app.schemas.verification import ClaimAnalysis, Language
 
@@ -66,7 +65,7 @@ class QueryService:
             queries.append(q.strip())
 
         # Query 6: For non-English, try transliterated/English query
-        if claim_analysis.language in (Language.HINDI, Language.BENGALI, Language.CODE_MIXED):
+        if claim_analysis.language in (Language.HINDI, Language.BENGALI, Language.CODE_MIXED):  # noqa: SIM102
             if entities:
                 q = f"{' '.join(entities[:3])} verification"
                 queries.append(q.strip())

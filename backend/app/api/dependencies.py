@@ -4,7 +4,7 @@ VERIFY-X 2.0 — FastAPI dependency injection.
 
 from __future__ import annotations
 
-from typing import AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
 
 import redis.asyncio as aioredis
 from fastapi import Depends
@@ -16,7 +16,7 @@ from app.database.session import get_db
 
 
 async def get_redis(
-    settings: Settings = Depends(get_settings),
+    settings: Settings = Depends(get_settings),  # noqa: B008
 ) -> AsyncGenerator[aioredis.Redis, None]:
     """Dependency that yields a Redis connection."""
     client = aioredis.from_url(
@@ -31,7 +31,7 @@ async def get_redis(
 
 
 async def get_repository(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> VerificationRepository:
     """Dependency that yields a VerificationRepository."""
     return VerificationRepository(db)

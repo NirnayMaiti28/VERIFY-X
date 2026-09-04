@@ -8,10 +8,6 @@ deduplicates, and processes documents.
 from __future__ import annotations
 
 import asyncio
-import uuid
-from datetime import datetime
-from typing import Optional
-from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -110,7 +106,7 @@ class RetrievalService:
         """Safely execute a retriever with error handling."""
         try:
             return await retriever.retrieve(query, language, max_results)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(
                 "retriever_error",
                 retriever=retriever.name,
@@ -200,7 +196,7 @@ class RetrievalService:
                 if text:
                     doc.content = clean_text(text[:3000])
 
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             # Keep original content if fetching fails
             pass
 

@@ -7,9 +7,8 @@ Endpoints for user feedback on verification results.
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,14 +22,14 @@ router = APIRouter(prefix="/feedback", tags=["Feedback"])
 class FeedbackRequest(BaseModel):
     request_id: str
     is_correct: bool
-    user_verdict: Optional[str] = None
-    comment: Optional[str] = None
+    user_verdict: str | None = None
+    comment: str | None = None
 
 
 @router.post("")
 async def submit_feedback(
     feedback: FeedbackRequest,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
 ):
     """Submit feedback for a verification result."""
     logger.info(

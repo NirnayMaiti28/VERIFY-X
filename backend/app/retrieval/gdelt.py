@@ -62,8 +62,8 @@ class GDELTRetriever(RetrieverInterface):
                 seendate = article.get("seendate", "")
                 if seendate:
                     try:
-                        published_at = datetime.strptime(seendate[:14], "%Y%m%dT%H%M%S")
-                    except Exception:
+                        published_at = datetime.strptime(seendate[:14], "%Y%m%dT%H%M%S")  # noqa: DTZ007
+                    except Exception:  # noqa: BLE001, S110
                         pass
 
                 doc = RetrievedDocument(
@@ -88,6 +88,6 @@ class GDELTRetriever(RetrieverInterface):
         except httpx.HTTPError as e:
             logger.error("gdelt_http_error", query=query, error=str(e))
             return []
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error("gdelt_error", query=query, error=str(e))
             return []

@@ -8,7 +8,6 @@ Every retriever must implement this interface, making providers independently re
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from app.schemas.evidence import RetrievedDocument
 

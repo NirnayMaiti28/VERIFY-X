@@ -8,7 +8,6 @@ No API key required.
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 import httpx
 
@@ -116,6 +115,6 @@ class WikipediaRetriever(RetrieverInterface):
         except httpx.HTTPError as e:
             logger.error("wikipedia_http_error", query=query, error=str(e))
             return []
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error("wikipedia_error", query=query, error=str(e))
             return []

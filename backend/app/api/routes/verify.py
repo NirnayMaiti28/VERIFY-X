@@ -7,9 +7,8 @@ Core API endpoints for text and multimodal verification.
 from __future__ import annotations
 
 import time
-from typing import Annotated, Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db
@@ -20,12 +19,11 @@ from app.schemas.verification import (
     ProcessingMetrics,
     TextVerificationRequest,
     VerificationResponse,
-    VerdictEnum,
 )
 from app.services.claim_service import ClaimService
 from app.services.query_service import QueryService
-from app.services.retrieval_service import RetrievalService
 from app.services.ranking_service import RankingService
+from app.services.retrieval_service import RetrievalService
 from app.services.verdict_service import VerdictService
 from app.utils.logging import get_logger, request_id_var
 
@@ -48,7 +46,7 @@ model_interface = TextModelInterface()
 async def verify_text(
     request: TextVerificationRequest,
     background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> VerificationResponse:
     """Verify a text claim using the full multi-stage pipeline."""
     request_id = request_id_var.get()
@@ -205,5 +203,5 @@ async def save_verification_result(db_factory, response: VerificationResponse):
             
             await repo.create_verification(req_db)
             
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error("background_save_failed", error=str(e), request_id=response.request_id)

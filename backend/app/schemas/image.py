@@ -4,15 +4,13 @@ VERIFY-X 2.0 — Pydantic schemas for image verification.
 
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
 class ImageVerificationRequest(BaseModel):
     """Request to verify an image (file upload handled separately)."""
-    context: Optional[str] = Field(None, max_length=2000, description="Additional context")
-    language: Optional[str] = Field(None, description="Language hint")
+    context: str | None = Field(None, max_length=2000, description="Additional context")
+    language: str | None = Field(None, description="Language hint")
 
 
 class ImageAnalysisResult(BaseModel):
@@ -26,13 +24,13 @@ class ImageAnalysisResult(BaseModel):
     ocr_confidence: float = 0.0
     vlm_confidence: float = 0.0
     ocr_vlm_agreement: bool = True
-    discrepancy_notes: Optional[str] = None
+    discrepancy_notes: str | None = None
 
 
 class ImageAuthenticitySignal(BaseModel):
     """Image authenticity analysis result."""
     has_exif: bool = False
-    compression_artifacts: Optional[str] = None
+    compression_artifacts: str | None = None
     manipulation_indicators: list[str] = Field(default_factory=list)
     confidence: float = 0.0
     assessment: str = "UNKNOWN"

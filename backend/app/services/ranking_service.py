@@ -6,8 +6,6 @@ Coordinates hybrid retrieval: BM25 → Dense → Merge → Deduplicate → Reran
 
 from __future__ import annotations
 
-from typing import Optional
-
 from app.ranking.bm25 import BM25Ranker
 from app.ranking.dense import DenseRetriever
 from app.ranking.reranker import CrossEncoderReranker

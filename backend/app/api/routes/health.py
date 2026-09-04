@@ -38,19 +38,19 @@ async def health_check() -> HealthResponse:
         redis="connected",     # Mocked for now
         text_model=settings.model_mode.value,
         vision_model=settings.model_mode.value,
-        timestamp=datetime.utcnow().isoformat(),
+        timestamp=datetime.utcnow().isoformat(),  # noqa: DTZ003
     )
 
 
 class ModelInfoResponse(BaseModel):
     text_model: str
-    text_adapter: Optional[str] = None
+    text_adapter: str | None = None
     vision_model: str
-    vision_adapter: Optional[str] = None
+    vision_adapter: str | None = None
     embedding_model: str
     model_mode: str
 
-from typing import Optional
+
 
 @router.get("/models", response_model=ModelInfoResponse)
 async def model_info() -> ModelInfoResponse:

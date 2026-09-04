@@ -8,11 +8,9 @@ with extracted entities, dates, locations, numbers, and claim type.
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 from app.schemas.verification import ClaimAnalysis, ClaimType, Language
-from app.utils.text import clean_text, remove_emojis, normalize_whitespace
-
+from app.utils.text import clean_text, normalize_whitespace, remove_emojis
 
 # ── Entity Patterns ──
 
@@ -61,7 +59,7 @@ CLAIM_TYPE_INDICATORS = {
 class ClaimService:
     """Normalizes claims and extracts structured metadata."""
 
-    def normalize(self, raw_claim: str, language: Optional[Language] = None) -> ClaimAnalysis:
+    def normalize(self, raw_claim: str, language: Language | None = None) -> ClaimAnalysis:
         """Normalize a raw claim into structured form.
         
         Steps:
@@ -135,7 +133,7 @@ class ClaimService:
         for match in cap_pattern.finditer(text):
             word = match.group()
             # Skip common sentence starters
-            if word.lower() not in {"the", "this", "that", "these", "those", "what", "when", "where", "who", "how"}:
+            if word.lower() not in {"the", "this", "that", "these", "those", "what", "when", "where", "who", "how"}:  # noqa: SIM102
                 if word not in found:
                     found.append(word)
 

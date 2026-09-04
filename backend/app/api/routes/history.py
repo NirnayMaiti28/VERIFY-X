@@ -11,7 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db
 from app.database.repositories import VerificationRepository
-from app.schemas.verification import PaginatedResponse, VerificationResponse, VerificationSummary
+from app.schemas.verification import (
+    PaginatedResponse,
+    VerificationResponse,
+    VerificationSummary,
+)
 from app.utils.logging import get_logger
 
 logger = get_logger("api.history")
@@ -22,7 +26,7 @@ router = APIRouter(prefix="/history", tags=["History"])
 async def get_history(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> PaginatedResponse[VerificationSummary]:
     """Get paginated verification history."""
     repo = VerificationRepository(db)
@@ -46,7 +50,7 @@ async def get_history(
             page_size=page_size,
             has_next=has_next,
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error("history_fetch_failed", error=str(e))
         return PaginatedResponse(items=[], total=0, page=page, page_size=page_size, has_next=False)
 
@@ -54,7 +58,7 @@ async def get_history(
 @router.get("/{request_id}", response_model=VerificationResponse)
 async def get_verification(
     request_id: str,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> VerificationResponse:
     """Get a specific verification result by ID."""
     repo = VerificationRepository(db)

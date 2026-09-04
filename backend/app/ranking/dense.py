@@ -6,8 +6,6 @@ Semantic retrieval using sentence-transformers + FAISS.
 
 from __future__ import annotations
 
-from typing import Optional
-
 import numpy as np
 
 from app.schemas.evidence import RetrievedDocument
@@ -75,11 +73,11 @@ class DenseRetriever:
 
             return scored_docs[:top_k]
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error("dense_ranking_error", error=str(e))
             return [(doc, 0.0) for doc in documents[:top_k]]
 
-    def build_faiss_index(self, documents: list[RetrievedDocument]) -> Optional[object]:
+    def build_faiss_index(self, documents: list[RetrievedDocument]) -> object | None:
         """Build a FAISS index for a set of documents.
         
         Returns the FAISS index. Can be used for larger-scale retrieval.
@@ -106,6 +104,6 @@ class DenseRetriever:
         except ImportError:
             logger.warning("faiss_not_installed")
             return None
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error("faiss_index_error", error=str(e))
             return None

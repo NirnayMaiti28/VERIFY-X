@@ -7,10 +7,9 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
-
 
 # ── Verdict Labels ──
 
@@ -47,8 +46,8 @@ class Language(str, Enum):
 class TextVerificationRequest(BaseModel):
     """Request to verify a text claim."""
     claim: str = Field(..., min_length=5, max_length=2000, description="The claim to verify")
-    language: Optional[Language] = Field(None, description="Language hint (auto-detected if not provided)")
-    context: Optional[str] = Field(None, max_length=5000, description="Additional context for the claim")
+    language: Language | None = Field(None, description="Language hint (auto-detected if not provided)")
+    context: str | None = Field(None, max_length=5000, description="Additional context for the claim")
 
 
 # ── Signal Models ──
@@ -67,15 +66,15 @@ class NumericalAnalysis(BaseModel):
     """Results of numerical verification."""
     detected_numbers: list[dict[str, Any]] = Field(default_factory=list)
     calculations: list[dict[str, Any]] = Field(default_factory=list)
-    consistency: Optional[float] = None
+    consistency: float | None = None
 
 
 class TimelineEvent(BaseModel):
     """A point on the verification timeline."""
     date: str
     event: str
-    source: Optional[str] = None
-    relevance: Optional[str] = None
+    source: str | None = None
+    relevance: str | None = None
 
 
 class ProcessingMetrics(BaseModel):
@@ -125,9 +124,9 @@ class VerificationResponse(BaseModel):
     signals: VerificationSignals = Field(default_factory=VerificationSignals)
     agreement: SourceAgreement = Field(default_factory=SourceAgreement)
     timeline: list[TimelineEvent] = Field(default_factory=list)
-    numerical_analysis: Optional[NumericalAnalysis] = None
-    image_analysis: Optional[dict[str, Any]] = None
-    claim_analysis: Optional[ClaimAnalysis] = None
+    numerical_analysis: NumericalAnalysis | None = None
+    image_analysis: dict[str, Any] | None = None
+    claim_analysis: ClaimAnalysis | None = None
     processing: ProcessingMetrics = Field(default_factory=ProcessingMetrics)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

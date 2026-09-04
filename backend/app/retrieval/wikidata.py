@@ -7,7 +7,6 @@ Retrieves structured facts from Wikidata for entity verification.
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 import httpx
 
@@ -83,6 +82,6 @@ class WikidataRetriever(RetrieverInterface):
         except httpx.HTTPError as e:
             logger.error("wikidata_http_error", query=query, error=str(e))
             return []
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error("wikidata_error", query=query, error=str(e))
             return []
