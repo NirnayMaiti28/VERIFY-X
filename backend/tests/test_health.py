@@ -1,4 +1,4 @@
-import pytest
+import pytest  # noqa: I001
 from httpx import AsyncClient, ASGITransport
 
 from app.main import app
