@@ -11,8 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db
 from app.database.repositories import VerificationRepository
+from app.schemas.common import PaginatedResponse
 from app.schemas.verification import (
-    PaginatedResponse,
     VerificationResponse,
     VerificationSummary,
 )
