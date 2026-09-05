@@ -5,7 +5,7 @@ VERIFY-X 2.0 — Common/shared Pydantic schemas.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, TypeVar
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -30,9 +30,9 @@ class HealthResponse(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 
-class PaginatedResponse(BaseModel):
+class PaginatedResponse(BaseModel, Generic[T]):
     """Generic paginated response wrapper."""
-    items: list[Any] = Field(default_factory=list)
+    items: list[T] = Field(default_factory=list)
     total: int = 0
     page: int = 1
     page_size: int = 20

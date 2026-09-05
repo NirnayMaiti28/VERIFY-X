@@ -12,7 +12,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db
-from app.database.models import ClaimDB, EvidenceDB, PredictionDB, VerificationRequestDB
+from app.database.models import ClaimModel, EvidenceModel, ModelPredictionModel, VerificationRequestModel
 from app.database.repositories import VerificationRepository
 from app.schemas.evidence import EvidenceStance
 from app.schemas.verification import (
@@ -162,25 +162,24 @@ async def save_verification_result(db_factory, response: VerificationResponse):
             repo = VerificationRepository(db)
             
             # Map Response to DB models
-            req_db = VerificationRequestDB(
+            req_db = VerificationRequestModel(
                 id=response.request_id,
                 language=response.language,
             )
             
-            claim_db = ClaimDB(
-                request_id=response.request_id,
-                original_text=response.claim,
-                normalized_text=response.claim_analysis.normalized_claim if response.claim_analysis else response.claim,
+            claim_db = ClaimModel(
+                verification_request_id=response.request_id,
+                original_claim=response.claim,
+                normalized_claim=response.claim_analysis.normalized_claim if response.claim_analysis else response.claim,
                 claim_type=response.claim_analysis.claim_type if response.claim_analysis else "factual",
                 entities=response.claim_analysis.entities if response.claim_analysis else [],
             )
             
             evidence_dbs = []
             for ev in response.evidence:
-                evidence_dbs.append(EvidenceDB(
-                    request_id=response.request_id,
+                evidence_dbs.append(EvidenceModel(
+                    verification_request_id=response.request_id,
                     evidence_id=ev.evidence_id,
-                    source=ev.source,
                     title=ev.title,
                     url=ev.url,
                     passage=ev.passage,
@@ -188,18 +187,16 @@ async def save_verification_result(db_factory, response: VerificationResponse):
                     stance=ev.stance,
                 ))
                 
-            prediction_db = PredictionDB(
-                request_id=response.request_id,
+            prediction_db = ModelPredictionModel(
+                verification_request_id=response.request_id,
                 model_name="verifyx-qwen3-8b",
-                verdict=response.verdict,
-                confidence=response.confidence,
-                reasoning=response.reasoning,
-                signals=response.signals.model_dump() if response.signals else {},
+                raw_prediction={"verdict": response.verdict, "reasoning": response.reasoning},
+                raw_confidence=response.confidence,
             )
             
             req_db.claim = claim_db
-            req_db.evidence = evidence_dbs
-            req_db.prediction = prediction_db
+            req_db.evidence_items = evidence_dbs
+            req_db.model_predictions = [prediction_db]
             
             await repo.create_verification(req_db)
             

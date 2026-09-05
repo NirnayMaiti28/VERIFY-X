@@ -1,0 +1,1 @@
+import yaml; from datasets import load_dataset; print('LIAR:'); print(load_dataset('rickpereira/liar', split='train')); print('FEVER:'); print(load_dataset('fever/fever', revision='refs/convert/parquet', split='train'))

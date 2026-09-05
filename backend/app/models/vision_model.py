@@ -7,15 +7,14 @@ Processes images via OCR and Visual Language Modeling.
 
 from __future__ import annotations
 
+import asyncio
 import io
 import json
-import asyncio
-from typing import Optional
 
 import torch
 from PIL import Image
 
-from app.config import get_settings, ModelMode
+from app.config import ModelMode, get_settings
 from app.schemas.verification import VerdictEnum
 from app.utils.logging import get_logger
 
@@ -51,7 +50,11 @@ class VisionModelInterface:
 
         try:
             logger.info("vision_model_loading", mode=self.mode.value, base=self.settings.vision_base_model)
-            from transformers import Qwen2VLForConditionalGeneration, AutoProcessor, BitsAndBytesConfig
+            from transformers import (
+                AutoProcessor,
+                BitsAndBytesConfig,
+                Qwen2VLForConditionalGeneration,
+            )
             
             bnb_config = BitsAndBytesConfig(
                 load_in_4bit=True,
@@ -91,8 +94,8 @@ class VisionModelInterface:
     async def predict(
         self, 
         image_bytes: bytes, 
-        context: Optional[str] = None,
-        extracted_text: Optional[str] = None
+        context: str | None = None,
+        extracted_text: str | None = None
     ) -> dict:
         """Analyze image and verify claims within it."""
         self.load_model()

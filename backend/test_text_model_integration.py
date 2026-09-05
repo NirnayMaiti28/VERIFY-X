@@ -1,6 +1,8 @@
 import asyncio
+
 from app.models.text_model import TextModelInterface
 from app.schemas.evidence import EvidenceItem
+
 
 async def main():
     model = TextModelInterface()

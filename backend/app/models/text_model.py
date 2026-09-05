@@ -7,12 +7,12 @@ Supports loading quantized models with LoRA adapters.
 
 from __future__ import annotations
 
-from typing import Optional
 import asyncio
 import json
+
 import torch
 
-from app.config import get_settings, ModelMode
+from app.config import ModelMode, get_settings
 from app.schemas.evidence import EvidenceItem
 from app.schemas.verification import VerdictEnum
 from app.utils.logging import get_logger
@@ -48,8 +48,12 @@ class TextModelInterface:
 
         try:
             logger.info("text_model_loading", mode=self.mode.value, base=self.settings.text_base_model)
-            from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
             from peft import PeftModel
+            from transformers import (
+                AutoModelForCausalLM,
+                AutoTokenizer,
+                BitsAndBytesConfig,
+            )
             
             self._tokenizer = AutoTokenizer.from_pretrained(
                 self.settings.text_base_model, 
