@@ -21,7 +21,6 @@ from transformers import (
 )
 from peft import (
     LoraConfig,
-    get_peft_model,
     prepare_model_for_kbit_training,
 )
 from trl import SFTTrainer, SFTConfig
@@ -56,16 +55,12 @@ def build_kwargs_from_signature(target_func, desired_kwargs):
         sig = inspect.signature(target_func)
         supported_params = set(sig.parameters.keys())
     except ValueError:
-        # If we can't inspect it (e.g. built-in), just return desired.
         return desired_kwargs
 
     actual_kwargs = {}
     dropped = []
     
-    # Check if the function accepts **kwargs
     has_varkw = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
-    
-    # Some classes like dataclasses inherit **kwargs via parent, but explicitly reject them in __init__
     is_dataclass = hasattr(target_func, '__dataclass_fields__') or (
         isinstance(target_func, type) and hasattr(target_func, '__dataclass_fields__')
     )
@@ -80,14 +75,27 @@ def build_kwargs_from_signature(target_func, desired_kwargs):
             
     if dropped:
         func_name = getattr(target_func, '__name__', str(target_func))
-        print(f"    [Warning] The following arguments were dropped because {func_name} does not support them in this environment: {dropped}")
+        print(f"    [Warning] The following arguments were dropped because {func_name} does not support them: {dropped}")
         
     return actual_kwargs
+
+def chunk_evidence(evidence_text, max_chars=1200):
+    """Truncates evidence intelligently to prevent OOM on 6GB GPUs."""
+    if len(evidence_text) <= max_chars:
+        return evidence_text
+    
+    # Simple chunking: take the first max_chars
+    # In a real pipeline, you'd pick sentences, but string slicing ensures strict memory limits.
+    chunked = evidence_text[:max_chars]
+    last_period = chunked.rfind('.')
+    if last_period > max_chars // 2:
+        return chunked[:last_period+1] + " [TRUNCATED]"
+    return chunked + "... [TRUNCATED]"
 
 def format_instruction(example):
     """
     Format a dataset example into the VERIFY-X standard instruction format.
-    Using 'prompt' and 'completion' columns for native TRL completion-only loss.
+    Uses 'prompt' and 'completion' to enforce strict structure.
     """
     system_prompt = "You are a fact verification model."
     claim = example.get("claim", "")
@@ -97,10 +105,7 @@ def format_instruction(example):
     
     if isinstance(evidence_list, list):
         for i, ev in enumerate(evidence_list):
-            if isinstance(ev, dict):
-                text = ev.get("text", "")
-            else:
-                text = str(ev)
+            text = ev.get("text", "") if isinstance(ev, dict) else str(ev)
             evidence_text += f"[E{i+1}]\n{text}\n\n"
     elif isinstance(evidence_list, str):
         evidence_text += f"[E1]\n{evidence_list}\n\n"
@@ -108,12 +113,15 @@ def format_instruction(example):
     if not evidence_text.strip():
         evidence_text = "[E1]\nNo reliable evidence provided.\n"
         
-    task_prompt = "Determine the veracity of the claim.\nReturn structured JSON."
+    # Truncate evidence heavily to fit 512 context length for 6GB VRAM
+    evidence_text = chunk_evidence(evidence_text.strip())
+        
+    task_prompt = "Determine the veracity of the claim."
     
     prompt = (
         f"SYSTEM:\n{system_prompt}\n\n"
         f"CLAIM:\n{claim}\n\n"
-        f"EVIDENCE:\n{evidence_text.strip()}\n\n"
+        f"EVIDENCE:\n{evidence_text}\n\n"
         f"TASK:\n{task_prompt}\n"
         f"### RESPONSE:\n"
     )
@@ -123,10 +131,20 @@ def format_instruction(example):
     if not evidence_ids and evidence_text != "[E1]\nNo reliable evidence provided.\n":
         evidence_ids = ["E1"]
         
+    # Dynamic reason based on evidence
+    reason = "No evidence was found to support or refute the claim."
+    if label == "TRUE":
+        reason = "The provided evidence explicitly supports the claims made."
+    elif label == "FALSE":
+        reason = "The provided evidence directly contradicts the claims made."
+    elif label == "MISLEADING":
+        reason = "The evidence shows the claim lacks critical context or distorts facts."
+    elif label == "PARTIALLY_TRUE":
+        reason = "The evidence supports some parts of the claim but refutes others."
+        
     response_obj = {
         "verdict": label,
-        "confidence": 0.90,
-        "reason": f"Based on the provided evidence, the claim is {label}.",
+        "reason": reason,
         "evidence_ids": evidence_ids
     }
     
@@ -163,14 +181,12 @@ def prepare_dataset(config):
         print(f"    - Loading {name} from {path} ({split})")
         
         load_kwargs = {}
-        # Avoid dataset scripts error for fever
         if path == "fever/fever":
             load_kwargs["revision"] = "refs/convert/parquet"
         elif path == "liar":
             path = "rickpereira/liar"
             
         try:
-            # Enforce trust_remote_code=False
             raw_ds = load_dataset(path, split=split, trust_remote_code=False, **load_kwargs)
         except Exception as e:
             print(f"    ! Failed to load {name}: {e}. Skipping.")
@@ -222,8 +238,7 @@ def prepare_dataset(config):
     if not datasets_to_merge:
         raise ValueError("No datasets could be loaded.")
         
-    from datasets import concatenate_datasets
-    merged_ds = concatenate_datasets(datasets_to_merge)
+    merged_ds = datasets.concatenate_datasets(datasets_to_merge)
     merged_ds = merged_ds.shuffle(seed=config["dataset"]["seed"])
     
     for ex in merged_ds:
@@ -254,13 +269,45 @@ def prepare_dataset(config):
     
     return split_ds
 
+def run_hardware_checks(config):
+    """Perform pre-flight GPU and memory diagnostic checks."""
+    print("="*40)
+    print("HARDWARE DIAGNOSTICS")
+    print("="*40)
+    
+    if not torch.cuda.is_available():
+        print("[ERROR] No CUDA GPU available! QLoRA training on CPU is not supported.")
+        print("[ERROR] Terminating to prevent crash.")
+        sys.exit(1)
+        
+    device = torch.device("cuda:0")
+    print(f"GPU: {torch.cuda.get_device_name(0)}")
+    total_mem = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+    print(f"Total VRAM: {total_mem:.2f} GB")
+    
+    if total_mem < 5.5:
+        print("[WARNING] GPU has less than 6GB VRAM. You may experience OOM errors.")
+        print("[WARNING] If OOM occurs, reduce max_seq_length to 384 or 256 in text_qlora.yaml.")
+        
+    bf16_supported = torch.cuda.is_bf16_supported()
+    print(f"BF16 Supported: {bf16_supported}")
+    
+    if config["training"].get("bf16", False) and not bf16_supported:
+        print("[WARNING] BF16 is enabled in config, but GPU does not support it.")
+        print("[WARNING] Automatically falling back to FP16.")
+        config["training"]["bf16"] = False
+        config["training"]["fp16"] = True
+        
+    print("="*40 + "\n")
+    return config
+
 def main():
     args = parse_args()
     config = load_config(args.config)
     set_seed(config["dataset"].get("seed", 42))
     
     print("="*40)
-    print("ENVIRONMENT VERSIONS (Dry-Run Validation)")
+    print("ENVIRONMENT VERSIONS")
     print("="*40)
     print(f"TRL:          {trl.__version__}")
     print(f"Transformers: {transformers.__version__}")
@@ -274,11 +321,16 @@ def main():
     
     if args.test_only:
         print("\n[*] Dataset loading test complete. Exiting due to --test-only flag.")
-        print("[*] Sample Train Example:")
-        print(dataset["train"][0])
+        print("[*] Sample Train Prompt:")
+        print(dataset["train"][0]["prompt"])
+        print("[*] Sample Train Completion:")
+        print(dataset["train"][0]["completion"])
         sys.exit(0)
+        
+    # 2. Hardware Checks
+    config = run_hardware_checks(config)
     
-    # 2. Tokenizer
+    # 3. Tokenizer
     model_name = config["model"]["name"]
     print(f"[*] Loading tokenizer for {model_name}...")
     
@@ -293,9 +345,9 @@ def main():
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
     
-    # 3. Quantization Config
+    # 4. Quantization Config
     quant_cfg = config["quantization"]
-    compute_dtype = getattr(torch, quant_cfg["compute_dtype"])
+    compute_dtype = torch.bfloat16 if config["training"].get("bf16") else torch.float16
     
     bnb_kwargs = {
         "load_in_4bit": quant_cfg["bits"] == 4,
@@ -306,7 +358,7 @@ def main():
     bnb_kwargs = build_kwargs_from_signature(BitsAndBytesConfig.__init__, bnb_kwargs)
     bnb_config = BitsAndBytesConfig(**bnb_kwargs)
     
-    # 4. Model Loading
+    # 5. Model Loading
     print(f"[*] Loading model {model_name} in 4-bit...")
     model_kwargs = {
         "pretrained_model_name_or_path": model_name,
@@ -326,7 +378,7 @@ def main():
     prep_kbit_kwargs = build_kwargs_from_signature(prepare_model_for_kbit_training, prep_kbit_kwargs)
     model = prepare_model_for_kbit_training(**prep_kbit_kwargs)
     
-    # 5. LoRA Setup
+    # 6. LoRA Setup
     lora_cfg = config["lora"]
     lora_kwargs = {
         "r": lora_cfg["rank"],
@@ -339,16 +391,14 @@ def main():
     lora_kwargs = build_kwargs_from_signature(LoraConfig.__init__, lora_kwargs)
     peft_config = LoraConfig(**lora_kwargs)
     
-    # 6. Training Arguments (SFTConfig)
+    # 7. Training Arguments (SFTConfig)
     train_cfg = config["training"]
     out_dir = config["output"]["dir"]
     os.makedirs(out_dir, exist_ok=True)
     
-    # Pre-calculate warmup_steps to be safe if warmup_ratio isn't supported
     total_steps = int((len(dataset["train"]) / (train_cfg["batch_size"] * train_cfg["gradient_accumulation_steps"])) * train_cfg["epochs"])
     warmup_steps = int(total_steps * train_cfg.get("warmup_ratio", 0.05))
     
-    # We will provide all possible argument variants and let our robust filter pick what's supported.
     desired_sft_kwargs = {
         "output_dir": out_dir,
         "per_device_train_batch_size": train_cfg["batch_size"],
@@ -357,24 +407,21 @@ def main():
         "learning_rate": train_cfg["learning_rate"],
         "lr_scheduler_type": train_cfg["lr_scheduler_type"],
         
-        # Provide both warmup_ratio and warmup_steps
-        "warmup_ratio": train_cfg["warmup_ratio"],
+        "warmup_ratio": train_cfg.get("warmup_ratio", 0.05),
         "warmup_steps": warmup_steps,
         
         "weight_decay": train_cfg["weight_decay"],
         "max_grad_norm": train_cfg["max_grad_norm"],
         "num_train_epochs": train_cfg["epochs"],
-        "fp16": train_cfg["fp16"],
-        "bf16": train_cfg["bf16"],
+        "fp16": train_cfg.get("fp16", False),
+        "bf16": train_cfg.get("bf16", False),
         "logging_steps": train_cfg["logging_steps"],
         
-        # Save strategy
         "save_strategy": "steps",
         "save_steps": train_cfg["save_steps"],
         "save_total_limit": train_cfg["save_total_limit"],
         "optim": train_cfg["optim"],
         
-        # Provide max_seq_length AND max_length
         "max_seq_length": train_cfg["max_seq_length"],
         "max_length": train_cfg["max_seq_length"],
         
@@ -383,16 +430,13 @@ def main():
     }
     
     if train_cfg.get("eval_steps"):
-        # Provide both evaluation_strategy and eval_strategy
         desired_sft_kwargs["evaluation_strategy"] = "steps"
         desired_sft_kwargs["eval_strategy"] = "steps"
         desired_sft_kwargs["eval_steps"] = train_cfg["eval_steps"]
         
-    # Get supported kwargs by checking SFTConfig __init__ and TrainingArguments __init__
     try:
         sft_sig = inspect.signature(SFTConfig.__init__)
         supported_sft_params = set(sft_sig.parameters.keys())
-        # Also inspect base TrainingArguments to gather all valid config args
         base_sig = inspect.signature(transformers.TrainingArguments.__init__)
         supported_sft_params.update(base_sig.parameters.keys())
     except ValueError:
@@ -407,15 +451,14 @@ def main():
         else:
             dropped_sft.append(k)
             
-    # Resolve conflicting duplicate configs manually
     if "eval_strategy" in final_sft_kwargs and "evaluation_strategy" in final_sft_kwargs:
-        del final_sft_kwargs["evaluation_strategy"]  # Prefer newer 'eval_strategy'
+        del final_sft_kwargs["evaluation_strategy"]
         
     if "max_seq_length" in final_sft_kwargs and "max_length" in final_sft_kwargs:
-        del final_sft_kwargs["max_length"]  # Prefer newer 'max_seq_length'
+        del final_sft_kwargs["max_length"]
         
     if "warmup_ratio" in final_sft_kwargs and "warmup_steps" in final_sft_kwargs:
-        del final_sft_kwargs["warmup_steps"]  # Prefer exact ratio if supported
+        del final_sft_kwargs["warmup_steps"]
         
     if dropped_sft:
         print(f"    [Warning] Dropping unsupported SFTConfig arguments: {dropped_sft}")
@@ -429,7 +472,7 @@ def main():
     
     sft_config = SFTConfig(**final_sft_kwargs)
     
-    # 7. Trainer Setup
+    # 8. Trainer Setup
     print("[*] Initializing SFTTrainer...")
     desired_trainer_kwargs = {
         "model": model,
@@ -438,7 +481,6 @@ def main():
         "peft_config": peft_config,
         "args": sft_config,
         
-        # Provide both tokenizer and processing_class
         "processing_class": tokenizer,
         "tokenizer": tokenizer,
     }
@@ -458,27 +500,29 @@ def main():
         else:
             dropped_trainer.append(k)
             
-    # Resolve conflicts
     if "processing_class" in final_trainer_kwargs and "tokenizer" in final_trainer_kwargs:
-        del final_trainer_kwargs["tokenizer"]  # Prefer newer 'processing_class'
+        del final_trainer_kwargs["tokenizer"]
         
     if dropped_trainer:
         print(f"    [Warning] Dropping unsupported SFTTrainer arguments: {dropped_trainer}")
         
-    assert not isinstance(model, peft.PeftModel), "Model should not be a PeftModel before SFTTrainer"
+    assert not isinstance(model, peft.PeftModel), "CRITICAL: Model is already a PeftModel before SFTTrainer."
         
     trainer = SFTTrainer(**final_trainer_kwargs)
     
-    # 8. Dry-run validation success
+    # 9. Dry-run validation success
     print("\n" + "="*50)
-    print("VERIFY-X QLoRA trainer initialized successfully.")
+    print("VERIFY-X Qwen3-4B QLoRA training pipeline initialized successfully.")
     print("="*50 + "\n")
     
-    # 9. Training
+    print(f"Memory Allocated: {torch.cuda.memory_allocated() / (1024**3):.2f} GB")
+    print(f"Memory Reserved: {torch.cuda.memory_reserved() / (1024**3):.2f} GB")
+    
+    # 10. Training
     print("[*] Starting training...")
     trainer.train()
     
-    # 10. Save
+    # 11. Save
     print(f"[*] Saving adapter to {out_dir}...")
     trainer.model.save_pretrained(out_dir)
     tokenizer.save_pretrained(out_dir)
