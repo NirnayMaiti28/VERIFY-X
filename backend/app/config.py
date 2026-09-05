@@ -16,6 +16,7 @@ from pydantic_settings import BaseSettings
 class ModelMode(str, Enum):
     LOCAL = "local"
     REMOTE = "remote"
+    MOCK = "mock"
 
 
 class LogFormat(str, Enum):
