@@ -38,7 +38,7 @@ frontend/dist/
 frontend/build/
 
 # ─── ML Models (NEVER commit model weights) ───
-models/
+/models/
 *.safetensors
 *.bin
 *.gguf
