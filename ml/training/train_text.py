@@ -276,9 +276,11 @@ def run_hardware_checks(config):
     print("="*40)
     
     if not torch.cuda.is_available():
-        print("[ERROR] No CUDA GPU available! QLoRA training on CPU is not supported.")
-        print("[ERROR] Terminating to prevent crash.")
-        sys.exit(1)
+        print("[WARNING] No CUDA GPU available! PyTorch is not recognizing your GPU.")
+        print("[WARNING] The script will fall back to CPU execution.")
+        print("[WARNING] 4-bit quantization will be automatically disabled, which requires ~16GB RAM.")
+        config["quantization"]["bits"] = 16  # Disable 4-bit for CPU
+        return config
         
     device = torch.device("cuda:0")
     print(f"GPU: {torch.cuda.get_device_name(0)}")
@@ -347,25 +349,30 @@ def main():
     
     # 4. Quantization Config
     quant_cfg = config["quantization"]
-    compute_dtype = torch.bfloat16 if config["training"].get("bf16") else torch.float16
     
-    bnb_kwargs = {
-        "load_in_4bit": quant_cfg["bits"] == 4,
-        "bnb_4bit_quant_type": quant_cfg["quant_type"],
-        "bnb_4bit_use_double_quant": quant_cfg["double_quant"],
-        "bnb_4bit_compute_dtype": compute_dtype,
-    }
-    bnb_kwargs = build_kwargs_from_signature(BitsAndBytesConfig.__init__, bnb_kwargs)
-    bnb_config = BitsAndBytesConfig(**bnb_kwargs)
+    if torch.cuda.is_available():
+        compute_dtype = torch.bfloat16 if config["training"].get("bf16") else torch.float16
+        bnb_kwargs = {
+            "load_in_4bit": quant_cfg["bits"] == 4,
+            "bnb_4bit_quant_type": quant_cfg["quant_type"],
+            "bnb_4bit_use_double_quant": quant_cfg["double_quant"],
+            "bnb_4bit_compute_dtype": compute_dtype,
+        }
+        bnb_kwargs = build_kwargs_from_signature(BitsAndBytesConfig.__init__, bnb_kwargs)
+        bnb_config = BitsAndBytesConfig(**bnb_kwargs)
+    else:
+        bnb_config = None
     
     # 5. Model Loading
-    print(f"[*] Loading model {model_name} in 4-bit...")
+    print(f"[*] Loading model {model_name}...")
     model_kwargs = {
         "pretrained_model_name_or_path": model_name,
-        "quantization_config": bnb_config,
-        "device_map": "auto",
+        "device_map": "auto" if torch.cuda.is_available() else "cpu",
         "trust_remote_code": config["model"].get("trust_remote_code", True),
     }
+    if bnb_config:
+        model_kwargs["quantization_config"] = bnb_config
+        
     model_kwargs = build_kwargs_from_signature(AutoModelForCausalLM.from_pretrained, model_kwargs)
     model = AutoModelForCausalLM.from_pretrained(**model_kwargs)
     
