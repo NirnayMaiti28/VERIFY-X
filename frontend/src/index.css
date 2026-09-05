@@ -109,9 +109,10 @@ a:hover {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(10, 11, 14, 0.85);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border-secondary);
+  background: rgba(10, 11, 14, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(42, 45, 58, 0.4);
 }
 
 .navbar-container {
@@ -241,16 +242,19 @@ a:hover {
 }
 
 .input-group {
-  background: var(--bg-card);
-  border: 1px solid var(--border-primary);
+  background: rgba(22, 25, 34, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(42, 45, 58, 0.5);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: border-color var(--transition-fast);
+  transition: all var(--transition-base);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .input-group:focus-within {
   border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px var(--accent-blue-dim);
+  box-shadow: 0 0 0 1px var(--accent-blue), 0 0 20px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
 }
 
 .claim-input {
@@ -299,7 +303,8 @@ a:hover {
 
 .verify-button:hover:not(:disabled) {
   background: #2563eb;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
 }
 
 .verify-button:disabled {
@@ -359,18 +364,21 @@ a:hover {
 
 /* ─── Upload Zone ─── */
 .upload-zone {
-  border: 2px dashed var(--border-primary);
+  border: 2px dashed rgba(42, 45, 58, 0.8);
   border-radius: var(--radius-lg);
   padding: var(--space-xl);
   cursor: pointer;
   transition: all var(--transition-base);
   text-align: center;
+  background: rgba(22, 25, 34, 0.3);
+  backdrop-filter: blur(8px);
 }
 
 .upload-zone:hover,
 .upload-zone.drag-active {
   border-color: var(--accent-blue);
-  background: var(--accent-blue-dim);
+  background: rgba(59, 130, 246, 0.05);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.1) inset;
 }
 
 .upload-prompt {
@@ -476,9 +484,10 @@ a:hover {
 }
 
 .feature-card:hover {
-  border-color: var(--border-accent);
-  background: var(--bg-card-hover);
-  transform: translateY(-2px);
+  border-color: var(--accent-blue);
+  background: rgba(22, 25, 34, 0.9);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(59, 130, 246, 0.1);
 }
 
 .feature-icon {
@@ -528,10 +537,19 @@ a:hover {
 }
 
 .result-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-primary);
+  background: rgba(22, 25, 34, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(42, 45, 58, 0.5);
   border-radius: var(--radius-lg);
   padding: var(--space-xl);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .result-header {

@@ -267,13 +267,21 @@ class VerdictService:
             # Calculate raw confidence from agreement strength
             model_confidence = max(support_ratio, refute_ratio)
 
-        # Adjust for temporal issues
-        if temporal_consistency < 0.7:
-            reasoning_parts.append(f"Temporal consistency is low ({temporal_consistency:.0%}), which may affect the verdict.")
-
-        # Adjust for numerical contradictions
+        # ── Phase 9: Advanced Verification Overrides ──
+        
+        # Override for numerical contradictions
         if numerical_consistency is not None and numerical_consistency < 0.5:
-            reasoning_parts.append(f"Numerical analysis shows inconsistency ({numerical_consistency:.0%}).")
+            if verdict in [VerdictEnum.TRUE, VerdictEnum.PARTIALLY_TRUE]:
+                verdict = VerdictEnum.MISLEADING
+            reasoning_parts.append(f"[WARNING] Deterministic numerical analysis detected severe contradictions ({numerical_consistency:.0%} consistency).")
+            model_confidence *= 0.8  # Penalize confidence
+
+        # Override for temporal issues
+        if temporal_consistency < 0.7:
+            if temporal_consistency < 0.4 and verdict == VerdictEnum.TRUE:
+                verdict = VerdictEnum.PARTIALLY_TRUE
+            reasoning_parts.append(f"[WARNING] Temporal consistency is low ({temporal_consistency:.0%}). Claim or evidence may be outdated.")
+            model_confidence *= 0.9
 
         reasoning = " ".join(reasoning_parts)
 
