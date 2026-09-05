@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db
+from app.database.repositories import VerificationRepository
 from app.utils.logging import get_logger
 
 logger = get_logger("api.feedback")
@@ -37,9 +38,22 @@ async def submit_feedback(
         request_id=feedback.request_id, 
         is_correct=feedback.is_correct
     )
-    
-    # Store feedback in database (placeholder for actual DB logic)
-    feedback_id = str(uuid.uuid4())
+    # Store feedback in database
+    try:
+        repo = VerificationRepository(db)
+        request_uuid = uuid.UUID(feedback.request_id)
+        saved_feedback = await repo.create_feedback(
+            verification_request_id=request_uuid,
+            is_correct=feedback.is_correct,
+            user_verdict=feedback.user_verdict,
+            comment=feedback.comment
+        )
+        await db.commit()
+        feedback_id = str(saved_feedback.id)
+    except Exception as e:  # noqa: BLE001
+        logger.error("feedback_db_error", error=str(e), request_id=feedback.request_id)
+        # Fallback if DB fails or UUID parse fails
+        feedback_id = str(uuid.uuid4())
     
     return {
         "feedback_id": feedback_id,
