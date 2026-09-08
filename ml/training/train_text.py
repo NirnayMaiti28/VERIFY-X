@@ -10,6 +10,12 @@ import torch
 import datasets
 import transformers
 import peft
+# --- PATCH PEFT BUG ---
+try:
+    peft.import_utils.is_torchao_available = lambda: False
+except Exception:
+    pass
+# ----------------------
 import trl
 
 from datasets import load_dataset
