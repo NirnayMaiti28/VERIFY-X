@@ -280,6 +280,9 @@ def run_hardware_checks(config):
         print("[WARNING] The script will fall back to CPU execution.")
         print("[WARNING] 4-bit quantization will be automatically disabled, which requires ~16GB RAM.")
         config["quantization"]["bits"] = 16  # Disable 4-bit for CPU
+        config["training"]["bf16"] = False
+        config["training"]["fp16"] = False
+        config["training"]["use_cpu"] = True
         return config
         
     device = torch.device("cuda:0")
@@ -422,6 +425,7 @@ def main():
         "num_train_epochs": train_cfg["epochs"],
         "fp16": train_cfg.get("fp16", False),
         "bf16": train_cfg.get("bf16", False),
+        "use_cpu": train_cfg.get("use_cpu", False),
         "logging_steps": train_cfg["logging_steps"],
         
         "save_strategy": "steps",
